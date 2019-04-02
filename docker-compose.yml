@@ -1,0 +1,45 @@
+version: '3.5'
+##############
+services:
+  proxy-nginx:
+    image: jwilder/nginx-proxy
+    restart: always
+    container_name: proxy-nginx
+    env_file: env/proxy-nginx.env
+    ports:
+      - "80:80"
+      - "443:443"
+    networks: 
+      - proxy-network
+    volumes: 
+      - "proxy-certs:/etc/nginx/certs"
+      - "proxy-dhparam:/etc/nginx/dhparam"
+      - "proxy-vhost:/etc/nginx/vhost.d"
+      - "proxy-html:/usr/share/nginx/html"
+      - "/var/run/docker.sock:/tmp/docker.sock"
+      
+  socket-server:
+    build: ./socket_server
+    restart: always
+    container_name: weist-socket-server
+    env_file: env/socket-server.env
+    ports: 
+      - 3333:3333
+    environment:
+      - VIRTUAL_HOST=${HOST_SOCKET}
+
+##############
+volumes:
+  proxy-html:
+     name: "proxy-html"
+  proxy-certs:
+     name: "proxy-certs"
+  proxy-vhost:
+     name: "proxy-vhost"
+  proxy-dhparam:
+     name: "proxy-dhparam"
+  
+##############
+networks:
+  proxy-network:
+    name: proxy-network

@@ -2,7 +2,7 @@
 FROM golang:latest
 
 # create workdir path
-WORKDIR /go/src/socket_server
+WORKDIR /go/src/FastSocketServer
 # copy all bundle resources to the workdir path
 COPY . .
 
@@ -11,10 +11,10 @@ COPY . .
 # compile golang executable
 RUN go get -d -v ./...
 RUN go install -v ./...
-RUN go build socket_server.go
+RUN go build FastSocketServer.go
 
 # expose port
 EXPOSE 3333
 
 # run the application
-CMD ["socket_server"]
+CMD ["FastSocketServer"]

@@ -75,6 +75,7 @@ const (
 )
 
 func (server *FastSocketServer) start(port uint16) {
+	//server := FastSocketServer{}
 	mapper := Mapper{}
 	socket, err := net.Listen("tcp", ":"+mapper.intToStr(int(port)))
 	if err != nil {

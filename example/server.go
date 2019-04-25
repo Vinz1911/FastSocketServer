@@ -2,16 +2,16 @@ package main
 
 import (
 	"log"
+	"net"
 
-	"github.com/gorilla/websocket"
-	"github.com/vinz1911/fastsocketserver"
+	fastsocket "github.com/Vinz1911/fastsocketserver"
+	//"github.com/vinz1911/fastsocket"
 )
 
 func main() {
-	var socket = fastsocketserver.FastSocketServer{}
-	socket.onBinaryMessage = func(str string) {
-
+	var socket = fastsocket.Server{}
+	socket.OnBinaryMessage = func(str []byte, socket net.Conn) {
 	}
-	var upgrader = websocket.Upgrader{}
+	socket.Start(3333)
 	log.Println("Hello World")
 }

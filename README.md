@@ -1,2 +1,4 @@
 # FastSocketServer
-Backend Implementation of the FastSocket Protocol
+This is the server implementation of the FastSocket Protocol.
+
+This is a custom package!

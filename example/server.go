@@ -4,7 +4,7 @@ import (
 	"log"
 	"net"
 
-	fastsocket "github.com/Vinz1911/fastsocketserver"
+	"github.com/Vinz1911/fastsocket"
 	//"github.com/vinz1911/fastsocket"
 )
 

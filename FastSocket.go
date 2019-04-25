@@ -1,4 +1,4 @@
-package fastsocketserver
+package fastsocket
 
 import (
 	"errors"
@@ -7,11 +7,14 @@ import (
 	"strconv"
 )
 
-// FastSocketServer represents the implementation of
+// Server represents the implementation of
 // the FastSocket Protocol (Server sided)
-type FastSocketServer struct {
-	onTextMessage   StringClosureSocket
-	onBinaryMessage ByteClosureSocket
+type Server struct {
+	socket net.Listener
+	// Closure for incoming text messages
+	OnTextMessage StringClosureSocket
+	// Closure for incoming data messages
+	OnBinaryMessage ByteClosureSocket
 }
 
 // Frame is a struct to Create and parse the
@@ -74,17 +77,18 @@ const (
 	SocketKey string = "6D8EDFD9-541C-4391-9171-AD519876B32E"
 )
 
-func (server *FastSocketServer) start(port uint16) {
-	//server := FastSocketServer{}
+// Start starts the FastSocketServer and handles all incoming connection
+func (server *Server) Start(port uint16) {
 	mapper := Mapper{}
-	socket, err := net.Listen("tcp", ":"+mapper.intToStr(int(port)))
+	err := errors.New("")
+	server.socket, err = net.Listen("tcp", ":"+mapper.intToStr(int(port)))
 	if err != nil {
 		log.Println(err)
 	}
 	log.Println("FastSocket Server started on Port:", mapper.intToStr(int(port)))
-	defer socket.Close()
+	defer server.socket.Close()
 	for {
-		connection, err := socket.Accept()
+		connection, err := server.socket.Accept()
 		if err != nil {
 			log.Panicln(err)
 		}
@@ -92,7 +96,12 @@ func (server *FastSocketServer) start(port uint16) {
 	}
 }
 
-func (server *FastSocketServer) loop(socket net.Conn) {
+// Stop closes all tcp connections
+func (server *Server) Stop() {
+	server.socket.Close()
+}
+
+func (server *Server) loop(socket net.Conn) {
 	locked := false
 	frame := Frame{}
 	server.frameClosures(&frame, socket)
@@ -118,26 +127,26 @@ func (server *FastSocketServer) loop(socket net.Conn) {
 }
 
 // Handle Response for Speedtest
-func (server *FastSocketServer) frameClosures(frame *Frame, socket net.Conn) {
+func (server *Server) frameClosures(frame *Frame, socket net.Conn) {
 	frame.onText = func(data []byte) {
 		message := string(data)
-		server.onTextMessage(message, socket)
+		server.OnTextMessage(message, socket)
 	}
 	frame.onBinary = func(data []byte) {
-		server.onBinaryMessage(data, socket)
+		server.OnBinaryMessage(data, socket)
 	}
 }
 
-// send a binary message to the client
-func (*FastSocketServer) sendData(data []byte, socket net.Conn) {
+// SendData is used to send a binary message to the client
+func (*Server) SendData(data []byte, socket net.Conn) {
 	frame := Frame{}
 	byted := data
 	message := frame.create(&byted, Binary)
 	socket.Write(*message)
 }
 
-// send a text message to the client
-func (*FastSocketServer) sendString(str string, socket net.Conn) {
+// SendString is used to send a text message to the client
+func (*Server) SendString(str string, socket net.Conn) {
 	frame := Frame{}
 	byted := []byte(str)
 	message := frame.create(&byted, Text)

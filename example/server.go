@@ -14,7 +14,7 @@ import (
 type Mapper struct{}
 
 func main() {
-	port := uint16(8081)
+	port := uint16(8080)
 	mapper := Mapper{}
 	server := fastsocket.Server{}
 	server.OnBinaryMessage = func(data []byte, socket net.Conn) {

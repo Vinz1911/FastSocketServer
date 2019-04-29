@@ -20,19 +20,19 @@ type Server struct {
 // Frame is a struct to Create and parse the
 // Protocol Messages
 // Custom TCP Communication Protocol Framing
-// +---+------------------------------+-+
-// |0 1|         ... Continue         |N|
-// +---+------------------------------+-+
-// | O |                              |F|
-// | P |         Payload Data...      |I|
-// | C |                              |N|
-// | O |         Payload Data...      |B|
-// | D |                              |Y|
-// | E |         Payload Data...      |T|
-// |   |                              |E|
-// |   |         Payload Data...      | |
-// |   |                              | |
-// +---+------------------------------+-+
+// +-+------------------------------+-+
+// |0|        ... Continue          |N|
+// +-+------------------------------+-+
+// |O|                              |F|
+// |P|         Payload Data...      |I|
+// |C|                              |N|
+// |O|         Payload Data...      |B|
+// |D|                              |Y|
+// |E|         Payload Data...      |T|
+// | |                              |E|
+// | |         Payload Data...      | |
+// | |                              | |
+// +---+----------------------------+-+
 type Frame struct {
 	cache    []byte
 	onText   ByteClosure
@@ -63,18 +63,22 @@ type ControlCode uint8
 type Opcode uint8
 
 const (
-	// ContinueByte is a placeholder
-	ContinueByte ControlCode = 0x0
-	// FinByte holds the ControlCode for `end of a message`
-	FinByte ControlCode = 0xFF
-	// Text holds the byte for a text message
-	Text Opcode = 0x1
-	// Binary holds the byte for a binary message
-	Binary Opcode = 0x2
-	// ConnectionClose holds the byte for convenient closed connections (not used now)
-	ConnectionClose Opcode = 0x8
-	// SocketKey is the unique ID to identify protocol conformance connections (used for the handshake)
-	SocketKey string = "6D8EDFD9-541C-4391-9171-AD519876B32E"
+	// continueByte is a placeholder
+	continueByte ControlCode = 0x0
+	// text holds the byte for a text message
+	text Opcode = 0x1
+	// binary holds the byte for a binary message
+	binary Opcode = 0x2
+	// finByte holds the ControlCode for `end of a message`
+	finByte ControlCode = 0x03
+	// acceptByte is for ACK if the handshake succeed
+	acceptByte ControlCode = 0x06
+	// connectionClose holds the byte for convenient closed connections (not used now)
+	connectionClose Opcode = 0x8
+	// socketID is the unique ID to identify protocol conformance connections (used for the handshake)
+	socketID string = "6D8EDFD9-541C-4391-9171-AD519876B32E"
+	// maximumLength is the maximum buffer read length
+	maximumLength int = 8192
 )
 
 // Start starts the FastSocketServer and handles all incoming connection
@@ -106,7 +110,7 @@ func (server *Server) loop(socket net.Conn) {
 	frame := Frame{}
 	server.frameClosures(&frame, socket)
 	for {
-		buffer := make([]byte, 8192)
+		buffer := make([]byte, maximumLength)
 		size, err := socket.Read(buffer)
 		if err != nil {
 			return
@@ -116,9 +120,9 @@ func (server *Server) loop(socket net.Conn) {
 		case true:
 			frame.parse(&data)
 		case false:
-			if string(data) == SocketKey {
+			if string(data) == socketID {
 				locked = true
-				socket.Write([]byte{0xFE})
+				socket.Write([]byte{byte(acceptByte)})
 			} else {
 				socket.Close()
 			}
@@ -141,7 +145,7 @@ func (server *Server) frameClosures(frame *Frame, socket net.Conn) {
 func (*Server) SendData(data []byte, socket net.Conn) {
 	frame := Frame{}
 	byted := data
-	message := frame.create(&byted, Binary)
+	message := frame.create(&byted, binary)
 	socket.Write(*message)
 }
 
@@ -149,7 +153,7 @@ func (*Server) SendData(data []byte, socket net.Conn) {
 func (*Server) SendString(str string, socket net.Conn) {
 	frame := Frame{}
 	byted := []byte(str)
-	message := frame.create(&byted, Text)
+	message := frame.create(&byted, text)
 	socket.Write(*message)
 }
 
@@ -158,9 +162,8 @@ func (*Server) SendString(str string, socket net.Conn) {
 func (*Frame) create(data *[]byte, opcode Opcode) *[]byte {
 	buffer := []byte{}
 	buffer = append(buffer, byte(opcode))
-	buffer = append(buffer, byte(ContinueByte))
 	buffer = append(buffer, *data...)
-	buffer = append(buffer, byte(FinByte))
+	buffer = append(buffer, byte(finByte))
 	return &buffer
 }
 
@@ -171,12 +174,12 @@ func (frame *Frame) parse(data *[]byte) {
 		return
 	}
 	frame.cache = append(frame.cache, *data...)
-	if (*data)[len(*data)-1] == byte(FinByte) {
-		if frame.cache[0] == byte(Text) {
+	if (*data)[len(*data)-1] == byte(finByte) {
+		if frame.cache[0] == byte(text) {
 			var message = frame.trimmedFrame(frame.cache)
 			frame.onText(message)
 		}
-		if frame.cache[0] == byte(Binary) {
+		if frame.cache[0] == byte(binary) {
 			var message = frame.trimmedFrame(frame.cache)
 			frame.onBinary(message)
 		}
@@ -188,7 +191,6 @@ func (frame *Frame) parse(data *[]byte) {
 func (*Frame) trimmedFrame(data []byte) []byte {
 	var trimmed = data
 	if len(data) >= 3 {
-		_, trimmed = trimmed[0], trimmed[1:]
 		_, trimmed = trimmed[0], trimmed[1:]
 		trimmed = trimmed[:len(trimmed)-1]
 	} else {

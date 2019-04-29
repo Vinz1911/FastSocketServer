@@ -14,7 +14,7 @@ RUN go install -v ./...
 RUN go build server.go
 
 # expose port
-EXPOSE 8081
+EXPOSE 8080
 
 # run the application
 CMD ["server"]

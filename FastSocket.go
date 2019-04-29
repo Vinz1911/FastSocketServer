@@ -20,19 +20,13 @@ type Server struct {
 // Frame is a struct to Create and parse the
 // Protocol Messages
 // Custom TCP Communication Protocol Framing
-// +-+------------------------------+-+
-// |0|        ... Continue          |N|
-// +-+------------------------------+-+
-// |O|                              |F|
-// |P|         Payload Data...      |I|
-// |C|                              |N|
-// |O|         Payload Data...      |B|
-// |D|                              |Y|
-// |E|         Payload Data...      |T|
-// | |                              |E|
-// | |         Payload Data...      | |
-// | |                              | |
-// +---+----------------------------+-+
+// 0                 1                              N                 N
+// +-----------------+------------------------------+-----------------+
+// |0 1 2 3 4 5 6 7 8|        ... Continue          |0 1 2 3 4 5 6 7 8|
+// +-----------------+------------------------------+-----------------+
+// |   O P C O D E   |         Payload Data...      |  F I N B Y T E  |
+// +-----------------+------------------------------+-----------------+
+//
 type Frame struct {
 	cache    []byte
 	onText   ByteClosure

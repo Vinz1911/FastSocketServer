@@ -10,8 +10,6 @@ import (
 // Server represents the implementation of
 // the FastSocket Protocol (Server sided)
 type Server struct {
-	// write lock
-	mutexLock bool
 	// socket
 	socket net.Listener
 	// Closure for incoming text messages
@@ -158,17 +156,11 @@ func (server *Server) loop(conn net.Conn) {
 
 // internal sending function
 func (server *Server) write(data *[]byte, conn net.Conn) {
-	if server.mutexLock {
-		return
-	}
-	server.mutexLock = true
 	_, err := conn.Write(*data)
 	if err != nil {
 		log.Println(err)
-		server.mutexLock = false
 		return
 	}
-	server.mutexLock = false
 }
 
 // Handle Response for Speedtest

@@ -4,16 +4,16 @@
             <a href="https://github.com/Vinz1911/NWKit"><img src="http://weist.it/content/assets/images/fastsocket_backend.svg" alt="NWKit" width="500"></a>
         <br>
         <br>
-            FastSocket Server
+            Socket (FastSocket Protocol)
         <br>
     </h1>
 </div>
 
-`FastSocket` is a proprietary bi-directional message based communication protocol on top of TCP (optionally over other layers in the future). This is the server-sided implementation of the FastSocket Protocol. It's optimized for maximum speed and performance. Currently the feature set is limited in starting the server at a specific port and sending and receiving messages.
+`FastSocket` is a proprietary bi-directional message based communication protocol on top of TCP (optionally over other layers in the future). This is the server-sided implementation of the FastSocket Protocol. It's optimized for maximum speed and performance. Socket is the FastSocket Protocol backend implementation with a limit feature set in starting the server at a specific port and sending and receiving messages.
  
 ## Install:
 ```go
-go get github.com/vinz1911/fastsocketserver
+go get github.com/vinz1911/socket
 ```
 
 ## Import:
@@ -24,7 +24,7 @@ package main
 // send messages back on a specific socket
 import (
     "net"
-    "github.com/vinz1911/fastsocketserver"
+    "github.com/vinz1911/socket"
 )
 
 // get fastsocket server
@@ -45,11 +45,9 @@ server.OnTextMessage = func(str string, socket net.Conn) {
 
 ## Send Messages:
 ```go
-// send a binary message to the client
-server.SendData(data []byte, socket net.Conn)
-
-// send a text message to the client
-server.SendString(str string, socket net.Conn)
+// send a text or binary message to the client
+// you need to transform a string into []byte before sending
+server.SendMessage(messageType messageType, data []byte, socket net.Conn)
 ```
 
 ## Start Server:
@@ -57,7 +55,3 @@ server.SendString(str string, socket net.Conn)
 // start the server at a specific tcp port
 server.Start(uint16)
 ```
-
-
-## Example:
-In examples folder is an example implementation of the FastSocket Server. The example implementation represents a `Speedtest Backend`, that can be used to get maximum load on your tcp connection.

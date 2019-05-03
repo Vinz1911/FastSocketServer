@@ -48,9 +48,9 @@ const (
 	maximumContentLength int = 16777216
 )
 
-// +----------------------------+
-// |		S E R V E R			|
-// +----------------------------+
+// +---------------------------+
+// |        S E R V E R        |
+// +---------------------------+
 // Server represents the implementation of
 // the FastSocket Protocol (Server sided)
 type Server struct {
@@ -143,9 +143,9 @@ func (server *Server) frameClosures(frame *frame, conn net.Conn) {
 		server.OnBinaryMessage(data, conn)
 	}
 }
-// +----------------------------+
-// |		F R A M I N G		|
-// +----------------------------+
+// +-----------------------------+
+// |        F R A M I N G        |
+// +-----------------------------+
 // Frame is a struct to Create and parse the
 // Protocol Messages
 // Custom TCP Communication Protocol Framing
@@ -213,9 +213,9 @@ func (*frame) trimmedFrame(data []byte) ([]byte, error) {
 	}
 	return trimmed, nil
 }
-// +--------------------------------+
-// |		T R A N S F E R			|
-// +--------------------------------+
+// +-------------------------------+
+// |        T R A N S F E R        |
+// +-------------------------------+
 // transfer is a raw tcp socket
 type transfer struct {
 	// the tcp listener

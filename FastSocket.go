@@ -90,6 +90,7 @@ func (server *Server) Start(port uint16) {
 		connection, err := server.socket.Accept()
 		if err != nil {
 			log.Println(err)
+			return
 		}
 		go server.loop(connection)
 	}
@@ -103,7 +104,12 @@ func (server *Server) Stop() {
 // SendData is used to send a binary message to the client
 func (server *Server) SendData(data []byte, conn net.Conn) {
 	frame := frame{}
-	message := frame.create(&data, binary)
+	message, err := frame.create(&data, binary)
+	if err != nil {
+		log.Println(err)
+		conn.Close()
+		return
+	}
 	server.write(message, conn)
 }
 
@@ -111,7 +117,12 @@ func (server *Server) SendData(data []byte, conn net.Conn) {
 func (server *Server) SendString(str string, conn net.Conn) {
 	frame := frame{}
 	data := []byte(str)
-	message := frame.create(&data, text)
+	message, err := frame.create(&data, text)
+	if err != nil {
+		log.Println(err)
+		conn.Close()
+		return
+	}
 	server.write(message, conn)
 }
 
@@ -155,9 +166,9 @@ func (server *Server) write(data *[]byte, conn net.Conn) {
 	if err != nil {
 		log.Println(err)
 		server.mutexLock = false
-	} else {
-		server.mutexLock = false
+		return
 	}
+	server.mutexLock = false
 }
 
 // Handle Response for Speedtest
@@ -173,12 +184,15 @@ func (server *Server) frameClosures(frame *frame, conn net.Conn) {
 
 // Create a FastSocket Protocol compliant frame
 // this functions add the neccessary bytes to the buffer
-func (*frame) create(data *[]byte, op opcode) *[]byte {
+func (*frame) create(data *[]byte, op opcode) (*[]byte, error) {
 	buffer := []byte{}
 	buffer = append(buffer, byte(op))
 	buffer = append(buffer, *data...)
 	buffer = append(buffer, byte(finByte))
-	return &buffer
+	if len(buffer) > maximumContentLength {
+		return nil, errors.New("writebuffer overflow")
+	}
+	return &buffer, nil
 }
 
 // Parse received Data into a FastSocket compliant

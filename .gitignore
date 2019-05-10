@@ -16,3 +16,5 @@
 
 #Goland
 .idea
+#Demo App
+test.go

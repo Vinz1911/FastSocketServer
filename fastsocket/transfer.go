@@ -1,7 +1,6 @@
 package fastsocket
 
 import (
-	"log"
 	"net"
 	"strconv"
 )
@@ -20,18 +19,20 @@ func (transfer *transfer) start(port uint16) error {
 	if err != nil {
 		return  err
 	}
-	log.Println("FastSocket Server started on Port:", strconv.Itoa(int(port)))
 	defer transfer.listener.Close()
 	for {
 		connection, err := transfer.listener.Accept()
 		if err != nil {
-			log.Println(err)
 			return err
 		}
 		go transfer.onConnection(connection)
 	}
 }
 // invalidate all current running tcp connections
-func (transfer *transfer) stop() {
-	transfer.listener.Close()
+func (transfer *transfer) stop() error {
+	err := transfer.listener.Close()
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -32,7 +32,7 @@ type frame struct {
 func (*frame) create(data *[]byte, messageType messageType, isFin bool) (*[]byte, error) {
 	var buffer []byte
 	var size = make([]byte, 8)
-	binary.LittleEndian.PutUint64(size, uint64(len(*data) + overheadSize))
+	binary.BigEndian.PutUint64(size, uint64(len(*data) + overheadSize))
 	if isFin {
 		buffer = append(buffer, byte(finByte))
 	} else {
@@ -50,7 +50,7 @@ func (*frame) create(data *[]byte, messageType messageType, isFin bool) (*[]byte
 // frame/message
 func (frame *frame) parse(data *[]byte) error {
 	if len(*data) <= 0 {
-		return errors.New("zero data")
+		return errors.New("zero data fault")
 	}
 	frame.cache = append(frame.cache, *data...)
 	if len(frame.cache) > maximumContentLength {
@@ -66,19 +66,19 @@ func (frame *frame) parse(data *[]byte) error {
 		slice := frame.cache[:frame.contentSize()]
 		switch slice[1] {
 		case byte(TextMessage):
-			message, err := frame.trimmedFrame(&slice)
+			message, err := frame.trimFrame(slice)
 			if err != nil {
 				return err
 			}
 			frame.onText(message)
 		case byte(BinaryMessage):
-			message, err := frame.trimmedFrame(&slice)
+			message, err := frame.trimFrame(slice)
 			if err != nil {
 				return err
 			}
 			frame.onBinary(message)
 		default:
-			return errors.New("invalid opcode")
+			return errors.New("invalid operational code")
 		}
 		if len(frame.cache) > frame.contentSize() {
 			frame.cache = frame.cache[frame.contentSize():]
@@ -94,21 +94,15 @@ func (frame *frame) contentSize() int {
 	if len(frame.cache) < overheadSize {
 		return 0
 	}
-	size := frame.cache
-	size = size[2:10]
-	return int(binary.LittleEndian.Uint64(size))
+	size := frame.cache[2:10]
+	return int(binary.BigEndian.Uint64(size))
 }
 
 // helper function to trim a frame into a message
-func (*frame) trimmedFrame(data *[]byte) ([]byte, error) {
-	if len(*data) < overheadSize {
-	return nil, errors.New("cannot trim frame")
-	}
-	var trimmed = *data
-	if len(*data) >= 10 {
-		trimmed = trimmed[10:]
-	} else {
+func (*frame) trimFrame(frame []byte) ([]byte, error) {
+	if len(frame) < overheadSize {
 		return nil, errors.New("cannot trim frame")
 	}
-	return trimmed, nil
+	data := frame[10:]
+	return data, nil
 }

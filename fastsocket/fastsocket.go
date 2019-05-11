@@ -1,15 +1,20 @@
 package fastsocket
 
 import (
-	"log"
+	"io"
 	"net"
 )
+// a normal closure
+type regularClosure func(conn net.Conn)
 
 // byte closure describe a closure which returns a byte array
 type byteClosure func([]byte, net.Conn)
 
 // string closure describe a closure which returns a string
 type stringClosure func(string, net.Conn)
+
+// error closure describe a closure which returns an error
+type errorClosure func(error, net.Conn)
 
 // Server represents the implementation of
 // the FastSocket Protocol (Server sided)
@@ -22,6 +27,10 @@ type Server struct {
 	OnTextMessage stringClosure
 	// Closure for incoming data messages
 	OnBinaryMessage byteClosure
+	// Closure for appearing errors
+	OnError errorClosure
+	// Closure for closed connections
+	OnClose regularClosure
 }
 // Start starts the FastSocketServer and handles all incoming connection
 func (server *Server) Start(port uint16) error {
@@ -35,24 +44,36 @@ func (server *Server) Start(port uint16) error {
 }
 // Stop closes all tcp connections
 func (server *Server) Stop() {
-	server.transfer.stop()
+	err := server.transfer.stop()
+	if err != nil {
+		server.OnError(err, nil)
+		return
+	}
+}
+// Close is for closing a connection
+func (server *Server) Close(conn net.Conn) {
+	err := conn.Close()
+	if err != nil {
+		server.OnError(err, conn)
+		return
+	}
 }
 // SendMessage is used to send data or string based messages to the client
 func (server *Server) SendMessage(messageType messageType, data *[]byte, conn net.Conn) {
-	if messageType == TextMessage {
+	switch messageType {
+	case TextMessage:
 		message, err := server.frame.create(data, TextMessage, false)
 		if err != nil {
-			log.Println(err)
-			conn.Close()
+			server.OnError(err, conn)
+			server.Close(conn)
 			return
 		}
 		server.write(message, conn)
-	}
-	if messageType == BinaryMessage {
+	case BinaryMessage:
 		message, err := server.frame.create(data, BinaryMessage, false)
 		if err != nil {
-			log.Println(err)
-			conn.Close()
+			server.OnError(err, conn)
+			server.Close(conn)
 			return
 		}
 		server.write(message, conn)
@@ -61,30 +82,35 @@ func (server *Server) SendMessage(messageType messageType, data *[]byte, conn ne
 // internal used transfer read loop
 func (server *Server) transferClosure() {
 	server.transfer.onConnection = func(conn net.Conn) {
-		mutexLock := false
+		isLocked := false
 		frame := frame{}
 		server.frameClosures(&frame, conn)
 		for {
 			buffer := make([]byte, maximumLength)
 			size, err := conn.Read(buffer)
 			if err != nil {
+				if err == io.EOF {
+					server.OnClose(conn)
+					return
+				}
+				server.OnError(err, conn)
 				return
 			}
 			data := buffer[:size]
-			switch mutexLock {
+			switch isLocked {
 			case true:
 				err := frame.parse(&data)
 				if err != nil {
-					log.Println(err)
-					conn.Close()
+					server.OnError(err, conn)
+					server.Close(conn)
 					return
 				}
 			case false:
 				if string(data) == socketID {
-					mutexLock = true
-					conn.Write([]byte{byte(acceptByte)})
+					isLocked = true
+					server.write(&[]byte{byte(acceptByte)}, conn)
 				} else {
-					conn.Close()
+					server.Close(conn)
 				}
 			}
 		}
@@ -94,7 +120,7 @@ func (server *Server) transferClosure() {
 func (server *Server) write(data *[]byte, conn net.Conn) {
 	_, err := conn.Write(*data)
 	if err != nil {
-		log.Println(err)
+		server.OnError(err, conn)
 		return
 	}
 }

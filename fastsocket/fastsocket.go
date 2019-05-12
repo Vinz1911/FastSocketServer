@@ -109,9 +109,11 @@ func (server *Server) transferClosure() {
 					return
 				}
 			case false:
-				if string(data) == socketID {
+				if isUUID(string(data)) {
 					isLocked = true
-					server.write(&[]byte{byte(acceptByte)}, conn)
+					sha256 := generateSHA256(string(data))
+					mapped := sha256[:]
+					server.write(&mapped, conn)
 				} else {
 					server.Close(conn)
 				}

@@ -23,6 +23,8 @@ type Server struct {
 	frame frame
 	// transfer
 	transfer transfer
+	// Closure if new connection comes in
+	OnReady regularClosure
 	// Closure for incoming text messages
 	OnTextMessage stringClosure
 	// Closure for incoming data messages
@@ -85,6 +87,7 @@ func (server *Server) transferClosure() {
 		isLocked := false
 		frame := frame{}
 		server.frameClosures(&frame, conn)
+		server.OnReady(conn)
 		for {
 			buffer := make([]byte, maximumLength)
 			size, err := conn.Read(buffer)

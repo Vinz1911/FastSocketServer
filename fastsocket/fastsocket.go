@@ -59,6 +59,7 @@ func (server *Server) Close(conn net.Conn) {
 		server.OnError(err, conn)
 		return
 	}
+	server.OnClose(conn)
 }
 // SendMessage is used to send data or string based messages to the client
 func (server *Server) SendMessage(messageType messageType, data *[]byte, conn net.Conn) {
@@ -110,10 +111,10 @@ func (server *Server) transferClosure() {
 				}
 			case false:
 				if isUUID(string(data)) {
-					isLocked = true
 					sha256 := generateSHA256(string(data))
 					mapped := sha256[:]
 					server.write(&mapped, conn)
+					isLocked = true
 				} else {
 					server.Close(conn)
 				}

@@ -37,7 +37,7 @@ import (
 
 type frame struct {
 	cache    []byte
-	onText   func([]byte)
+	onText   func(string)
 	onBinary func([]byte)
 }
 // Create a FastSocket Protocol compliant frame
@@ -80,16 +80,17 @@ func (frame *frame) parse(data *[]byte) error {
 		switch slice[1] {
 		case byte(TextMessage):
 			message, err := frame.trimFrame(slice)
+			trimmed := string(message)
 			if err != nil {
 				return err
 			}
-			frame.onText(message)
+			frame.onText(trimmed)
 		case byte(BinaryMessage):
-			message, err := frame.trimFrame(slice)
+			trimmed, err := frame.trimFrame(slice)
 			if err != nil {
 				return err
 			}
-			frame.onBinary(message)
+			frame.onBinary(trimmed)
 		default:
 			return errors.New("invalid operational code")
 		}

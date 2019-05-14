@@ -33,12 +33,18 @@ type Server struct {
 	OnError errorClosure
 	// Closure for closed connections
 	OnClose regularClosure
+	// the path to the cert file for tls
+	CertPath string
+	// the path to the key file for tls
+	KeyPath string
 }
 // Start starts the FastSocketServer and handles all incoming connection
-func (server *Server) Start(port uint16) error {
+func (server *Server) Start(transferType transferType,port uint16) error {
 	server.transfer = transfer{}
+	server.transfer.certPath = server.CertPath
+	server.transfer.keyPath = server.KeyPath
 	server.transferClosure()
-	err := server.transfer.start(port)
+	err := server.transfer.start(transferType, port)
 	if err != nil {
 		return err
 	}
@@ -132,9 +138,8 @@ func (server *Server) write(data *[]byte, conn net.Conn) {
 }
 // Handle Response for speed test
 func (server *Server) frameClosures(frame *frame, conn net.Conn) {
-	frame.onText = func(data []byte) {
-		message := string(data)
-		server.OnTextMessage(message, conn)
+	frame.onText = func(str string) {
+		server.OnTextMessage(str, conn)
 	}
 	frame.onBinary = func(data []byte) {
 		server.OnBinaryMessage(data, conn)

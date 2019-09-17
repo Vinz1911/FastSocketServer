@@ -71,7 +71,7 @@ func (server *Server) Close(conn net.Conn) {
 func (server *Server) SendMessage(messageType messageType, data *[]byte, conn net.Conn) {
 	switch messageType {
 	case TextMessage:
-		message, err := server.frame.create(data, TextMessage, false)
+		message, err := server.frame.create(data, TextMessage)
 		if err != nil {
 			server.OnError(err, conn)
 			server.Close(conn)
@@ -79,7 +79,7 @@ func (server *Server) SendMessage(messageType messageType, data *[]byte, conn ne
 		}
 		server.write(message, conn)
 	case BinaryMessage:
-		message, err := server.frame.create(data, BinaryMessage, false)
+		message, err := server.frame.create(data, BinaryMessage)
 		if err != nil {
 			server.OnError(err, conn)
 			server.Close(conn)

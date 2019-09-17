@@ -42,15 +42,10 @@ type frame struct {
 }
 // Create a FastSocket Protocol compliant frame
 // this functions add the necessary bytes to the buffer
-func (*frame) create(data *[]byte, messageType messageType, isFin bool) (*[]byte, error) {
+func (*frame) create(data *[]byte, messageType messageType) (*[]byte, error) {
 	var buffer []byte
 	var size = make([]byte, 8)
 	binary.BigEndian.PutUint64(size, uint64(len(*data) + overheadSize))
-	if isFin {
-		buffer = append(buffer, byte(finByte))
-	} else {
-		buffer = append(buffer, byte(continueByte))
-	}
 	buffer = append(buffer, byte(messageType))
 	buffer = append(buffer, size...)
 	buffer = append(buffer, *data...)
@@ -77,7 +72,7 @@ func (frame *frame) parse(data *[]byte) error {
 	}
 	for len(frame.cache) >= frame.contentSize() && frame.contentSize() != 0 {
 		slice := frame.cache[:frame.contentSize()]
-		switch slice[1] {
+		switch slice[0] {
 		case byte(TextMessage):
 			message, err := frame.trimFrame(slice)
 			trimmed := string(message)
@@ -108,7 +103,7 @@ func (frame *frame) contentSize() int {
 	if len(frame.cache) < overheadSize {
 		return 0
 	}
-	size := frame.cache[2:10]
+	size := frame.cache[1:overheadSize]
 	return int(binary.BigEndian.Uint64(size))
 }
 
@@ -117,6 +112,6 @@ func (*frame) trimFrame(frame []byte) ([]byte, error) {
 	if len(frame) < overheadSize {
 		return nil, errors.New("cannot trim frame")
 	}
-	data := frame[10:]
+	data := frame[overheadSize:]
 	return data, nil
 }

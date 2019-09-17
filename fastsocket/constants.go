@@ -29,5 +29,5 @@ const (
 	// maximum frame size
 	maximumContentLength int = 16777216
 	// overhead
-	overheadSize int = 10
+	overheadSize int = 9
 )

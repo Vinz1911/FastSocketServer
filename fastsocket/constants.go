@@ -25,9 +25,9 @@ const (
 	// finByte holds the ControlCode for `end of a message`
 	finByte operationalCode = 0x03
 	// maximumLength is the maximum buffer read length
-	maximumLength int = 8192
+	maximumLength int = 16384
 	// maximum frame size
 	maximumContentLength int = 16777216
 	// overhead
-	overheadSize int = 9
+	overheadSize int = 5
 )

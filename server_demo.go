@@ -2,7 +2,6 @@ package main
 
 // Example of a `speed test server` implementation with
 // the help of the FastSocket Protocol
-
 import (
 	"./fastsocket"
 	"github.com/fatih/color"
@@ -31,7 +30,6 @@ func main() {
 		size := len(data)
 		message := mapper.intToStr(size)
 		server.SendStringMessage(socket, message)
-
 	}
 	// respond on text message
 	server.OnStringMessage = func(socket net.Conn, str string) {
@@ -61,7 +59,6 @@ func main() {
 		return
 	}
 }
-
 // convert a string to an integer
 func (*Mapper) strToInt(str string) int {
 	value, err := strconv.Atoi(str)
@@ -69,7 +66,6 @@ func (*Mapper) strToInt(str string) int {
 	}
 	return value
 }
-
 // convert an integer to a string
 func (*Mapper) intToStr(integer int) string {
 	value := strconv.Itoa(integer)

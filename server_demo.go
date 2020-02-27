@@ -4,7 +4,10 @@ package main
 // the help of the FastSocket Protocol
 import (
 	"./fastsocket"
+	"errors"
+	"flag"
 	"github.com/fatih/color"
+	"math"
 	"net"
 	"strconv"
 )
@@ -14,10 +17,15 @@ type Mapper struct{}
 
 func main() {
 	printError := color.New(color.FgRed).PrintlnFunc()
-	printInfo := color.New(color.FgYellow).PrintlnFunc()
+	printInfo := color.New(color.FgCyan).PrintlnFunc()
 
-	printInfo("[INFO]: creating server...")
-	port := uint16(7878)
+	var port uint
+	flag.UintVar(&port, "port", 7878, "server port")
+	flag.Parse()
+	if port > math.MaxUint16 {
+		printError(errors.New("value overflows uint16, please check given port"))
+		return
+	}
 	mapper := Mapper{}
 	server := fastsocket.Server{}
 	server.OnReady = func(socket net.Conn) {
@@ -51,9 +59,9 @@ func main() {
 	server.OnClose = func(socket net.Conn) {
 		printInfo("[INFO]: connection closed and removed id:", socket)
 	}
+	printInfo("[INFO]: creating server...")
 	printInfo("[INFO]: server started on port:", port)
-
-	err := server.Start(fastsocket.TCPTransfer, port)
+	err := server.Start(fastsocket.TCPTransfer, uint16(port))
 	if err != nil {
 		printError("[ERROR]: ", err)
 		return

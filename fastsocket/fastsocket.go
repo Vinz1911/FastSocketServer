@@ -1,21 +1,20 @@
+// Copyright 2019 Vinzenz Weist. All rights reserved.
+// Use of this source code is risked by yourself.
+// license that can be found in the LICENSE file.
+
+// FastSocket is a proprietary communication protocol directly
+// written on top of TCP. It's a message based protocol which allows you
+// to send text and binary based messages. The protocol is so small it have
+// only 5 Bytes overhead per message, the handshake is done directly on TCP level.
+// The motivation behind this protocol was, to use it as `Speedtest Protocol`, a
+// low level TCP communication protocol to measure TCP throughput performance. -> FastSockets is the answer
+// FastSocket allows to enter all possible TCP Options if needed and is completely non-blocking and async,
+// thanks to golang's go routine
 package fastsocket
 
 import (
-	"io"
 	"net"
 )
-// a normal closure
-type regularClosure func(conn net.Conn)
-
-// byte closure describe a closure which returns a byte array
-type byteClosure func([]byte, net.Conn)
-
-// string closure describe a closure which returns a string
-type stringClosure func(string, net.Conn)
-
-// error closure describe a closure which returns an error
-type errorClosure func(error, net.Conn)
-
 // Server represents the implementation of
 // the FastSocket Protocol (Server sided)
 type Server struct {
@@ -39,15 +38,13 @@ type Server struct {
 	KeyPath string
 }
 // Start starts the FastSocketServer and handles all incoming connection
-func (server *Server) Start(transferType transferType,port uint16) error {
+func (server *Server) Start(transferType transferType, port uint16) error {
 	server.transfer = transfer{}
 	server.transfer.certPath = server.CertPath
 	server.transfer.keyPath = server.KeyPath
-	server.transferClosure()
+	server.callbacks()
 	err := server.transfer.start(transferType, port)
-	if err != nil {
-		return err
-	}
+	if err != nil { return err }
 	return nil
 }
 // Stop closes all tcp connections
@@ -68,7 +65,7 @@ func (server *Server) Close(conn net.Conn) {
 	server.OnClose(conn)
 }
 // SendMessage is used to send data or string based messages to the client
-func (server *Server) SendMessage(messageType messageType, data *[]byte, conn net.Conn) {
+func (server *Server) SendMessage(messageType messageType, data []byte, conn net.Conn) {
 	switch messageType {
 	case TextMessage:
 		message, err := server.frame.create(data, TextMessage)
@@ -77,7 +74,7 @@ func (server *Server) SendMessage(messageType messageType, data *[]byte, conn ne
 			server.Close(conn)
 			return
 		}
-		server.write(message, conn)
+		server.send(message, conn)
 	case BinaryMessage:
 		message, err := server.frame.create(data, BinaryMessage)
 		if err != nil {
@@ -85,63 +82,44 @@ func (server *Server) SendMessage(messageType messageType, data *[]byte, conn ne
 			server.Close(conn)
 			return
 		}
-		server.write(message, conn)
+		server.send(message, conn)
 	}
 }
-// internal used transfer read loop
-func (server *Server) transferClosure() {
-	server.transfer.onConnection = func(conn net.Conn) {
-		isLocked := false
-		frame := frame{}
-		server.frameClosures(&frame, conn)
-		server.OnReady(conn)
-		for {
-			buffer := make([]byte, maximumLength)
-			size, err := conn.Read(buffer)
+// closures from the transfer protocol
+func (server *Server) callbacks() {
+	server.transfer.onMessage = func(data []byte, conn net.Conn, isLocked *bool, frame *frame) {
+		switch *isLocked {
+		case true:
+			err := frame.parse(data, func(str string) {
+				server.OnTextMessage(str, conn)
+			}, func(data []byte) {
+				server.OnBinaryMessage(data, conn)
+			})
 			if err != nil {
-				if err == io.EOF {
-					server.OnClose(conn)
-					return
-				}
 				server.OnError(err, conn)
+				server.Close(conn)
 				return
 			}
-			data := buffer[:size]
-			switch isLocked {
-			case true:
-				err := frame.parse(&data)
-				if err != nil {
-					server.OnError(err, conn)
-					server.Close(conn)
-					return
-				}
-			case false:
-				if isUUID(string(data)) {
-					sha256 := generateSHA256(string(data))
-					mapped := sha256[:]
-					server.write(&mapped, conn)
-					isLocked = true
-				} else {
-					server.Close(conn)
-				}
+		case false:
+			if isUUID(string(data)) {
+				sha256 := generateSHA256(string(data))
+				mapped := sha256[:]
+				server.send(mapped, conn)
+				*isLocked = true
+			} else {
+				server.Close(conn)
 			}
 		}
 	}
+	server.transfer.onReady = server.OnReady
+	server.transfer.onClose = server.OnClose
+	server.transfer.onError = server.OnError
 }
 // internal sending function
-func (server *Server) write(data *[]byte, conn net.Conn) {
-	_, err := conn.Write(*data)
+func (server *Server) send(data []byte, conn net.Conn) {
+	_, err := conn.Write(data)
 	if err != nil {
 		server.OnError(err, conn)
 		return
-	}
-}
-// Handle Response for speed test
-func (server *Server) frameClosures(frame *frame, conn net.Conn) {
-	frame.onText = func(str string) {
-		server.OnTextMessage(str, conn)
-	}
-	frame.onBinary = func(data []byte) {
-		server.OnBinaryMessage(data, conn)
 	}
 }

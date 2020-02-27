@@ -1,3 +1,6 @@
+// Copyright 2019 Vinzenz Weist. All rights reserved.
+// Use of this source code is risked by yourself.
+// license that can be found in the LICENSE file.
 package fastsocket
 
 import (

@@ -1,5 +1,7 @@
+// Copyright 2019 Vinzenz Weist. All rights reserved.
+// Use of this source code is risked by yourself.
+// license that can be found in the LICENSE file.
 package fastsocket
-
 
 // operational codes are used to
 // control the framing, handles handshake and more
@@ -25,9 +27,9 @@ const (
 	// finByte holds the ControlCode for `end of a message`
 	finByte operationalCode = 0x03
 	// maximumLength is the maximum buffer read length
-	maximumLength int = 16384
+	maximumLength int = 8192
 	// maximum frame size
-	maximumContentLength int = 16777216
+	maximumContentLength int = 8_388_608
 	// overhead
 	overheadSize int = 5
 )

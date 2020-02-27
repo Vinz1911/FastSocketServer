@@ -50,7 +50,7 @@ func (*frame) create(data []byte, messageType messageType) ([]byte, error) {
 }
 // Parse received Data into a FastSocket compliant
 // frame/message
-func (frame *frame) parse(data []byte, callbackString func(string), callbackByte func([]byte)) error {
+func (frame *frame) parse(data []byte, callbackString func(string), callbackData func([]byte)) error {
 	if len(data) <= 0 {
 		return errors.New("zero data fault")
 	}
@@ -63,15 +63,15 @@ func (frame *frame) parse(data []byte, callbackString func(string), callbackByte
 	for len(frame.cache) >= frame.contentSize() && frame.contentSize() != 0 {
 		slice := frame.cache[:frame.contentSize()]
 		switch slice[0] {
-		case byte(TextMessage):
+		case byte(StringMessage):
 			message, err := frame.trim(slice)
 			trimmed := string(message)
 			if err != nil { return err }
 			callbackString(trimmed)
-		case byte(BinaryMessage):
+		case byte(DataMessage):
 			trimmed, err := frame.trim(slice)
 			if err != nil { return err }
-			callbackByte(trimmed)
+			callbackData(trimmed)
 		default:
 			return errors.New("invalid operational code")
 		}

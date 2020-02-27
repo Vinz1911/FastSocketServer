@@ -5,13 +5,13 @@ import "net"
 type regularClosure func(conn net.Conn)
 
 // byte closure describe a closure which returns a byte array
-type byteClosure func([]byte, net.Conn)
+type dataClosure func(net.Conn, []byte)
 
 // string closure describe a closure which returns a string
-type stringClosure func(string, net.Conn)
+type stringClosure func(net.Conn, string)
 
 // error closure describe a closure which returns an error
-type errorClosure func(error, net.Conn)
+type errorClosure func(net.Conn, error)
 
 // transfer closure for the transfer
-type transferClosure func([]byte, net.Conn, *bool, *frame)
+type transferClosure func(net.Conn, []byte, *bool, *frame)

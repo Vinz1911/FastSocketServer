@@ -25,9 +25,9 @@ type Server struct {
 	// Closure if new connection comes in
 	OnReady regularClosure
 	// Closure for incoming text messages
-	OnTextMessage stringClosure
+	OnStringMessage stringClosure
 	// Closure for incoming data messages
-	OnBinaryMessage byteClosure
+	OnDataMessage dataClosure
 	// Closure for appearing errors
 	OnError errorClosure
 	// Closure for closed connections
@@ -51,7 +51,7 @@ func (server *Server) Start(transferType transferType, port uint16) error {
 func (server *Server) Stop() {
 	err := server.transfer.stop()
 	if err != nil {
-		server.OnError(err, nil)
+		server.OnError(nil, err)
 		return
 	}
 }
@@ -59,44 +59,43 @@ func (server *Server) Stop() {
 func (server *Server) Close(conn net.Conn) {
 	err := conn.Close()
 	if err != nil {
-		server.OnError(err, conn)
+		server.OnError(conn, err)
 		return
 	}
 	server.OnClose(conn)
 }
-// SendMessage is used to send data or string based messages to the client
-func (server *Server) SendMessage(messageType messageType, data []byte, conn net.Conn) {
-	switch messageType {
-	case TextMessage:
-		message, err := server.frame.create(data, TextMessage)
-		if err != nil {
-			server.OnError(err, conn)
-			server.Close(conn)
-			return
-		}
-		server.send(message, conn)
-	case BinaryMessage:
-		message, err := server.frame.create(data, BinaryMessage)
-		if err != nil {
-			server.OnError(err, conn)
-			server.Close(conn)
-			return
-		}
-		server.send(message, conn)
+// send string based message
+func (server *Server) SendStringMessage(conn net.Conn, str string) {
+	message, err := server.frame.create([]byte(str), StringMessage)
+	if err != nil {
+		server.OnError(conn, err)
+		server.Close(conn)
+		return
 	}
+	server.send(message, conn)
+}
+// send data based message
+func (server *Server) SendDataMessage(conn net.Conn, data []byte) {
+	message, err := server.frame.create(data, DataMessage)
+	if err != nil {
+		server.OnError(conn, err)
+		server.Close(conn)
+		return
+	}
+	server.send(message, conn)
 }
 // closures from the transfer protocol
 func (server *Server) callbacks() {
-	server.transfer.onMessage = func(data []byte, conn net.Conn, isLocked *bool, frame *frame) {
+	server.transfer.onMessage = func(conn net.Conn, data []byte, isLocked *bool, frame *frame) {
 		switch *isLocked {
 		case true:
 			err := frame.parse(data, func(str string) {
-				server.OnTextMessage(str, conn)
+				server.OnStringMessage(conn, str)
 			}, func(data []byte) {
-				server.OnBinaryMessage(data, conn)
+				server.OnDataMessage(conn, data)
 			})
 			if err != nil {
-				server.OnError(err, conn)
+				server.OnError(conn, err)
 				server.Close(conn)
 				return
 			}
@@ -119,7 +118,7 @@ func (server *Server) callbacks() {
 func (server *Server) send(data []byte, conn net.Conn) {
 	_, err := conn.Write(data)
 	if err != nil {
-		server.OnError(err, conn)
+		server.OnError(conn, err)
 		return
 	}
 }

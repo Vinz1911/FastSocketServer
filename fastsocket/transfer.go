@@ -60,11 +60,11 @@ func (transfer *transfer) readLoop(conn net.Conn) {
 				transfer.onClose(conn)
 				return
 			}
-			transfer.onError(err, conn)
+			transfer.onError(conn, err)
 			return
 		}
 		data := buffer[:size]
-		transfer.onMessage(data, conn, &isLocked, &frame)
+		transfer.onMessage(conn, data, &isLocked, &frame)
 	}
 }
 // invalidate all current running tcp connections

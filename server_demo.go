@@ -4,11 +4,10 @@ package main
 // the help of the FastSocket Protocol
 
 import (
-	"net"
-	"strconv"
-
 	"./fastsocket"
 	"github.com/fatih/color"
+	"net"
+	"strconv"
 )
 
 // Mapper is a Helper to convert data types
@@ -28,26 +27,26 @@ func main() {
 		printInfo("[INFO]: remote address", socket.RemoteAddr())
 	}
 	// respond on binary message
-	server.OnBinaryMessage = func(data []byte, socket net.Conn) {
+	server.OnDataMessage = func(socket net.Conn, data []byte) {
 		size := len(data)
-		message := []byte(mapper.intToStr(size))
-		server.SendMessage(fastsocket.TextMessage, message, socket)
+		message := mapper.intToStr(size)
+		server.SendStringMessage(socket, message)
 
 	}
 	// respond on text message
-	server.OnTextMessage = func(str string, socket net.Conn) {
+	server.OnStringMessage = func(socket net.Conn, str string) {
 		response := str
 		size := mapper.strToInt(response)
-		var buffer []byte
+		var message []byte
 		if size <= 0 {
-			buffer = make([]byte, 1)
+			message = make([]byte, 1)
 		} else {
-			buffer = make([]byte, size)
+			message = make([]byte, size)
 		}
-		server.SendMessage(fastsocket.BinaryMessage, buffer, socket)
+		server.SendDataMessage(socket, message)
 	}
 	// respond on error
-	server.OnError = func(err error, socket net.Conn) {
+	server.OnError = func(socket net.Conn, err error) {
 		printError("[ERROR]: ", err)
 	}
 	// respond on close

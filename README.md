@@ -51,10 +51,10 @@ func main() {
 
 ## Closures:
 ```go
-server.OnBinaryMessage = func(socket net.Conn, data []byte) {
+server.OnBinaryMessage = func(CONN net.Conn, DATA []byte) {
     // called when a binary message was received
 }
-server.OnTextMessage = func(socket net.Conn, str string) {
+server.OnTextMessage = func(CONN net.Conn, STRING string) {
     // called when a text message was received
 }
 ```
@@ -81,3 +81,6 @@ server.SendDataMessage(CONN, MESSAGE)
 //  - fastsocket.TLSTransfer (for secure connection, requires load of ssl certs)
 server.Start(TRANSFER_TYPE, PORT)
 ```
+
+## Authors:
+[Vinzenz Weist](https://github.com/Vinz1911)

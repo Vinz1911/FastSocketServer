@@ -1,7 +1,7 @@
 <div align="center">
     <h1>
         <br>
-            <a href="https://github.com/Vinz1911/NWKit"><img src="http://weist.it/content/assets/images/fastsocket_backend.svg" alt="NWKit" width="500"></a>
+            <a href="https://github.com/Vinz1911/Socket"><img src="https://github.com/Vinz1911/Socket/blob/develop/.fastsocketserver.svg" alt="FastSocket" width="500"></a>
         <br>
         <br>
             Socket (FastSocket Protocol)

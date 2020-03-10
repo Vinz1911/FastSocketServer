@@ -7,18 +7,18 @@ import (
 	"encoding/binary"
 	"errors"
 )
-// 0         1           N
-// +---------+-----------+
-// |0|1 2 3 4|0 1 2 3... |
-// +-+-------+-----------+
-// |O| FRAME |  PAYLOAD  |
-// |P| LENGTH|    (N)    |
-// |C|  (4)  |           |
-// +-+-------+-----------+
-// :Payload continued... :
-// + - - - - - - - - - - +
-// |Payload continued... |
-// +---------------------+
+// 0          1            N
+// +----------+------------+
+// |0|1 2 3 4 | 0 1 2 3... |
+// +-+--------+------------+
+// |O| FRAME  |  PAYLOAD   |
+// |P| LENGTH |    (N)     |
+// |C|   (4)  |            |
+// +-+--------+------------+
+// : Payload continued...  :
+// + - - - - - - - - - - - +
+// | Payload continued...  |
+// +-----------------------+
 //
 // This describes the framing protocol.
 // - OPC:
@@ -55,13 +55,14 @@ func (frame *frame) parse(data []byte, callbackString func(string), callbackData
 		return errors.New("zero data fault")
 	}
 	frame.cache = append(frame.cache, data...)
+	length := frame.size()
 	if len(frame.cache) > maximumContentLength {
 		return errors.New("read buffer overflow")
 	}
 	if len(frame.cache) < overheadSize { return nil }
-	if len(frame.cache) < frame.contentSize() { return nil }
-	for len(frame.cache) >= frame.contentSize() && frame.contentSize() != 0 {
-		slice := frame.cache[:frame.contentSize()]
+	if len(frame.cache) < length { return nil }
+	for len(frame.cache) >= length && length != 0 {
+		slice := frame.cache[:length]
 		switch slice[0] {
 		case byte(StringMessage):
 			message, err := frame.trim(slice)
@@ -75,8 +76,8 @@ func (frame *frame) parse(data []byte, callbackString func(string), callbackData
 		default:
 			return errors.New("invalid operational code")
 		}
-		if len(frame.cache) > frame.contentSize() {
-			frame.cache = frame.cache[frame.contentSize():]
+		if len(frame.cache) > length {
+			frame.cache = frame.cache[length:]
 		} else {
 			frame.cache = []byte{}
 		}
@@ -84,7 +85,7 @@ func (frame *frame) parse(data []byte, callbackString func(string), callbackData
 	return nil
 }
 // helper function to parse the content size of a frame
-func (frame *frame) contentSize() int {
+func (frame *frame) size() int {
 	if len(frame.cache) < overheadSize {
 		return 0
 	}

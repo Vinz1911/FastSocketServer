@@ -29,7 +29,7 @@ const (
 	// maximumLength is the maximum buffer read length
 	maximumLength int = 8192
 	// maximum frame size
-	maximumContentLength int = 8_388_608
+	maximumContentLength int = 16_777_216
 	// overhead
 	overheadSize int = 5
 )

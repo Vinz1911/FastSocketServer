@@ -43,7 +43,7 @@ func (*frame) create(data []byte, messageType messageType) ([]byte, error) {
 	buffer = append(buffer, byte(messageType))
 	buffer = append(buffer, size...)
 	buffer = append(buffer, data...)
-	if len(buffer) > maximumContentLength {
+	if len(buffer) > maximumFrameLength {
 		return nil, errors.New("write buffer overflow")
 	}
 	return buffer, nil
@@ -56,7 +56,7 @@ func (frame *frame) parse(data []byte, callbackString func(string), callbackData
 	}
 	frame.cache = append(frame.cache, data...)
 	length := frame.size()
-	if len(frame.cache) > maximumContentLength {
+	if len(frame.cache) > maximumFrameLength {
 		return errors.New("read buffer overflow")
 	}
 	if len(frame.cache) < overheadSize { return nil }

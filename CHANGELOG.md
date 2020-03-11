@@ -3,11 +3,7 @@
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Released]
-## [2.8.0] - 2020-03-10
+## [3.0.0] - 2020-03-11
 ### Added
-- major improvements on code
-- framing refactored
-- release versions now matching -> client + server with the same version will seamless work together
-
-### Removed
-- old code
+- renamed constant to match client implementation
+- version matching release

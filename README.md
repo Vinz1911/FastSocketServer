@@ -9,7 +9,9 @@
     </h1>
 </div>
 
-`FastSocket` is a proprietary bi-directional message based communication protocol on top of TCP (optionally over other layers in the future). This is the server-sided implementation of the FastSocket Protocol. It's optimized for maximum speed and performance. Socket is the FastSocket Protocol backend implementation with a limit feature set in starting the server at a specific port and sending and receiving messages.
+`FastSocket` is a proprietary bi-directional message based communication protocol on top of TCP (optionally over other layers in the future). The idea behind this project was, to create a TCP communication like the [WebSocket Protocol](https://tools.ietf.org/html/rfc6455) with less overhead and the ability to track every 8192 bytes read or written on the socket without waiting for the whole message to be transmitted. This allows it to use it as **protocol for speed tests** for measuring the TCP throughput performance. Our server-sided implementation is written in [golang](https://golang.org/) and it's optimized for maximum speed and performance.
+
+The client sided (Swift) implementation of the FastSocket Protocol can be found here: [FastSocket](https://github.com/Vinz1911/FastSocket).
 
 ## Features:
 - [X] send and receive text and data messages
@@ -51,10 +53,10 @@ func main() {
 
 ## Closures:
 ```go
-server.OnBinaryMessage = func(CONN net.Conn, DATA []byte) {
+server.OnDataMessage = func(CONN net.Conn, DATA []byte) {
     // called when a binary message was received
 }
-server.OnTextMessage = func(CONN net.Conn, STRING string) {
+server.OnStringMessage = func(CONN net.Conn, STRING string) {
     // called when a text message was received
 }
 ```
@@ -69,7 +71,7 @@ server.SendDataMessage(CONN, MESSAGE)
 // send a text message to the client
 // CONN: net.Conn Object
 // MESSAGE: text based message
-server.SendDataMessage(CONN, MESSAGE)
+server.SendStringMessage(CONN, MESSAGE)
 ```
 
 ## Start Server:
@@ -82,5 +84,10 @@ server.SendDataMessage(CONN, MESSAGE)
 server.Start(TRANSFER_TYPE, PORT)
 ```
 
-## Authors:
-[Vinzenz Weist](https://github.com/Vinz1911)
+## Author:
+👨🏼‍💻 [Vinzenz Weist](https://github.com/Vinz1911)
+
+This is my heart project, it's made with a lot of love and dedication ❤️
+
+## Supporter:
+👨🏽‍💻 [Juan Romero](https://github.com/rukano)
